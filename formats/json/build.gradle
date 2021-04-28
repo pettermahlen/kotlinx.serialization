@@ -34,3 +34,7 @@ jvmTest {
         excludeTest('kotlinx.serialization.SerializerForNullableJavaTypeTest', 'testMixedList')
     }
 }
+
+compileTestKotlinJsLegacy {
+    exclude '**/PropertyExternalInitializerTest.kt'
+}
