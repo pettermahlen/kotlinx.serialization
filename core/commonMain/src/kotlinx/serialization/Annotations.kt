@@ -7,6 +7,7 @@
 package kotlinx.serialization
 
 import kotlinx.serialization.descriptors.*
+import kotlinx.serialization.encoding.*
 import kotlin.reflect.*
 
 /**
@@ -131,6 +132,40 @@ public annotation class Required
 @Target(AnnotationTarget.PROPERTY)
 // @Retention(AnnotationRetention.RUNTIME) still runtime, but KT-41082
 public annotation class Transient
+
+/**
+ * Strategy for [EncodeDefault] annotation.
+ */
+@ExperimentalSerializationApi
+public enum class EncodeDefaultMode {
+    /**
+     *  Always serialize property, even if its value is equal to the default. Do not respect format settings.
+     *
+     *  In other words, [KSerializer.serialize] method behaves like if the property does not have default value.
+     *  [KSerializer.deserialize] method remains intact and still can assign default value if value was not decoded.
+     */
+    ALWAYS,
+
+    /**
+     * If property value is equal to a default, do not encode it. Do not respect format settings.
+     *
+     * In other words, [KSerializer.serialize] method does not call [CompositeEncoder.shouldEncodeElementDefault].
+     */
+    NEVER
+}
+
+/**
+ * Controls whether this property is serialized when its value is equal to a default value,
+ * regardless of the format settings.
+ *
+ * Does not change decoding and deserialization process.
+ *
+ * @see EncodeDefaultMode.ALWAYS
+ * @see EncodeDefaultMode.NEVER
+ */
+@Target(AnnotationTarget.PROPERTY)
+@ExperimentalSerializationApi
+public annotation class EncodeDefault(val mode: EncodeDefaultMode = EncodeDefaultMode.ALWAYS)
 
 /**
  * Meta-annotation that commands the compiler plugin to handle the annotation as serialization-specific.
