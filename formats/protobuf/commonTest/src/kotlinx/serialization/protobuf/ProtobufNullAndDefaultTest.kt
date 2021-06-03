@@ -15,7 +15,7 @@ class ProtobufNullAndDefaultTest {
     class ProtoWithNullDefaultAlways(@EncodeDefault val s: String? = null)
 
     @Serializable
-    class ProtoWithNullDefaultNever(@EncodeDefault(EncodeDefaultMode.NEVER) val s: String? = null)
+    class ProtoWithNullDefaultNever(@EncodeDefault(EncodeDefault.Mode.NEVER) val s: String? = null)
 
     @Test
     fun testProtobufDropDefaults() {

@@ -5,6 +5,7 @@
 package kotlinx.serialization.features
 
 import kotlinx.serialization.*
+import kotlinx.serialization.EncodeDefault.Mode.*
 import kotlinx.serialization.json.*
 import kotlin.test.*
 
@@ -22,8 +23,8 @@ class SkipDefaultsTest {
     data class DifferentModes(
         val a: String = "a",
         @EncodeDefault val b: String = "b",
-        @EncodeDefault(EncodeDefaultMode.ALWAYS) val c: String = "c",
-        @EncodeDefault(EncodeDefaultMode.NEVER) val d: String = "d"
+        @EncodeDefault(ALWAYS) val c: String = "c",
+        @EncodeDefault(NEVER) val d: String = "d"
     )
 
     @Test

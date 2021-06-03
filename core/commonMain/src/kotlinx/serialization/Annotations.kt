@@ -134,38 +134,38 @@ public annotation class Required
 public annotation class Transient
 
 /**
- * Strategy for [EncodeDefault] annotation.
- */
-@ExperimentalSerializationApi
-public enum class EncodeDefaultMode {
-    /**
-     *  Always serialize property, even if its value is equal to the default. Do not respect format settings.
-     *
-     *  In other words, [KSerializer.serialize] method behaves like if the property does not have default value.
-     *  [KSerializer.deserialize] method remains intact and still can assign default value if value was not decoded.
-     */
-    ALWAYS,
-
-    /**
-     * If property value is equal to a default, do not encode it. Do not respect format settings.
-     *
-     * In other words, [KSerializer.serialize] method does not call [CompositeEncoder.shouldEncodeElementDefault].
-     */
-    NEVER
-}
-
-/**
  * Controls whether this property is serialized when its value is equal to a default value,
  * regardless of the format settings.
  *
  * Does not change decoding and deserialization process.
  *
- * @see EncodeDefaultMode.ALWAYS
- * @see EncodeDefaultMode.NEVER
+ * @see EncodeDefault.Mode.ALWAYS
+ * @see EncodeDefault.Mode.NEVER
  */
 @Target(AnnotationTarget.PROPERTY)
 @ExperimentalSerializationApi
-public annotation class EncodeDefault(val mode: EncodeDefaultMode = EncodeDefaultMode.ALWAYS)
+public annotation class EncodeDefault(val mode: Mode = Mode.ALWAYS) {
+    /**
+     * Strategy for [EncodeDefault] annotation.
+     */
+    @ExperimentalSerializationApi
+    public enum class Mode {
+        /**
+         *  Always serialize property, even if its value is equal to the default. Do not respect format settings.
+         *
+         *  In other words, [KSerializer.serialize] method behaves like if the property does not have default value.
+         *  [KSerializer.deserialize] method remains intact and still can assign default value if value was not decoded.
+         */
+        ALWAYS,
+
+        /**
+         * If property value is equal to a default, do not encode it. Do not respect format settings.
+         *
+         * In other words, [KSerializer.serialize] method does not call [CompositeEncoder.shouldEncodeElementDefault].
+         */
+        NEVER
+    }
+}
 
 /**
  * Meta-annotation that commands the compiler plugin to handle the annotation as serialization-specific.
