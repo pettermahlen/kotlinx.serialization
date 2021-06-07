@@ -17,7 +17,7 @@ import kotlin.jvm.*
 
 internal fun <T> Json.readJson(element: JsonElement, deserializer: DeserializationStrategy<T>): T {
     val input = when (element) {
-        is JsonObject -> JsonTreeDecoder(this, element)
+        is JsonObject -> JsonTreeDecoder(this, element, deserializer.descriptor)
         is JsonArray -> JsonTreeListDecoder(this, element)
         is JsonLiteral, JsonNull -> JsonPrimitiveDecoder(this, element as JsonPrimitive)
     }
@@ -29,7 +29,7 @@ internal fun <T> Json.readPolymorphicJson(
     element: JsonObject,
     deserializer: DeserializationStrategy<T>
 ): T {
-    return JsonTreeDecoder(this, element, discriminator, deserializer.descriptor).decodeSerializableValue(deserializer)
+    return JsonTreeDecoder(this, element, deserializer.descriptor, discriminator, deserializer.descriptor).decodeSerializableValue(deserializer)
 }
 
 private sealed class AbstractJsonTreeDecoder(
@@ -62,7 +62,7 @@ private sealed class AbstractJsonTreeDecoder(
                 { JsonTreeMapDecoder(json, cast(currentObject, descriptor)) },
                 { JsonTreeListDecoder(json, cast(currentObject, descriptor)) }
             )
-            else -> JsonTreeDecoder(json, cast(currentObject, descriptor))
+            else -> JsonTreeDecoder(json, cast(currentObject, descriptor), descriptor)
         }
     }
 
@@ -179,11 +179,15 @@ private class JsonPrimitiveDecoder(json: Json, override val value: JsonPrimitive
 private open class JsonTreeDecoder(
     json: Json,
     override val value: JsonObject,
+    objectDescriptor: SerialDescriptor? = null,
     private val polyDiscriminator: String? = null,
     private val polyDescriptor: SerialDescriptor? = null
 ) : AbstractJsonTreeDecoder(json, value) {
     private var position = 0
 
+    @OptIn(ExperimentalSerializationApi::class)
+    private val elementMarker: JsonElementMarker? =
+        if (objectDescriptor == null || json.configuration.explicitNulls) null else JsonElementMarker(objectDescriptor)
     /*
      * Checks whether JSON has `null` value for non-null property or unknown enum value for enum property
      */
@@ -194,14 +198,21 @@ private open class JsonTreeDecoder(
             { (currentElement(tag) as? JsonPrimitive)?.contentOrNull }
         )
 
+    @Suppress("INVISIBLE_MEMBER")
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         while (position < descriptor.elementsCount) {
             val name = descriptor.getTag(position++)
-            if (name in value && (!configuration.coerceInputValues || !coerceInputValue(descriptor, position - 1, name))) {
-                return position - 1
+            val index = position - 1
+            if (name in value && (!configuration.coerceInputValues || !coerceInputValue(descriptor, index, name))) {
+                elementMarker?.mark(index)
+                return index
             }
         }
-        return CompositeDecoder.DECODE_DONE
+        return elementMarker?.nextUnmarkedIndex() ?: CompositeDecoder.DECODE_DONE
+    }
+
+    override fun decodeNotNullMark(): Boolean {
+        return !(elementMarker?.isUnmarkedNull ?: false) && super.decodeNotNullMark()
     }
 
     override fun elementName(desc: SerialDescriptor, index: Int): String {
