@@ -134,10 +134,22 @@ public annotation class Required
 public annotation class Transient
 
 /**
- * Controls whether this property is serialized when its value is equal to a default value,
+ * Controls whether the target property is serialized when its value is equal to a default value,
  * regardless of the format settings.
+ * Does not affect decoding and deserialization process.
  *
- * Does not change decoding and deserialization process.
+ * Example of usage:
+ * ```
+ * @Serializable
+ * data class Foo(
+ *     @EncodeDefault(ALWAYS) val a: Int = 42,
+ *     @EncodeDefault(NEVER) val b: Int = 43,
+ *     val c: Int = 44
+ * )
+ *
+ * Json { encodeDefaults = false }.encodeToString((Foo()) // {"a": 42}
+ * Json { encodeDefaults = true }.encodeToString((Foo())  // {"a": 42, "c":44}
+ * ```
  *
  * @see EncodeDefault.Mode.ALWAYS
  * @see EncodeDefault.Mode.NEVER
@@ -146,22 +158,21 @@ public annotation class Transient
 @ExperimentalSerializationApi
 public annotation class EncodeDefault(val mode: Mode = Mode.ALWAYS) {
     /**
-     * Strategy for [EncodeDefault] annotation.
+     * Strategy for the [EncodeDefault] annotation.
      */
     @ExperimentalSerializationApi
     public enum class Mode {
         /**
-         *  Always serialize property, even if its value is equal to the default. Do not respect format settings.
-         *
-         *  In other words, [KSerializer.serialize] method behaves like if the property does not have default value.
-         *  [KSerializer.deserialize] method remains intact and still can assign default value if value was not decoded.
+         * Configures serializer to always encode the property, even if its value is equal to its default.
+         * For annotated properties, format settings are not taken into account and
+         * [CompositeEncoder.shouldEncodeElementDefault] is not invoked.
          */
         ALWAYS,
 
         /**
-         * If property value is equal to a default, do not encode it. Do not respect format settings.
-         *
-         * In other words, [KSerializer.serialize] method does not call [CompositeEncoder.shouldEncodeElementDefault].
+         * Configures serializer not to encode the property if its value is equal to its default.
+         * For annotated properties, format settings are not taken into account and
+         * [CompositeEncoder.shouldEncodeElementDefault] is not invoked.
          */
         NEVER
     }
@@ -178,12 +189,12 @@ public annotation class EncodeDefault(val mode: Mode = Mode.ALWAYS) {
 public annotation class SerialInfo
 
 /**
- * Instructs the plugin to use [ContextSerializer] on a given property or type.
+ * Instructs the plugin to use [ContextualSerializer] on a given property or type.
  * Context serializer is usually used when serializer for type can only be found in runtime.
- * It is also possible to apply [ContextSerializer] to every property of the given type,
+ * It is also possible to apply [ContextualSerializer] to every property of the given type,
  * using file-level [UseContextualSerialization] annotation.
  *
- * @see ContextSerializer
+ * @see ContextualSerializer
  * @see UseContextualSerialization
  */
 @Target(AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
@@ -191,10 +202,10 @@ public annotation class SerialInfo
 public annotation class Contextual
 
 /**
- * Instructs the plugin to use [ContextSerializer] for every type in the current file that is listed in the [forClasses].
+ * Instructs the plugin to use [ContextualSerializer] for every type in the current file that is listed in the [forClasses].
  *
  * @see Contextual
- * @see ContextSerializer
+ * @see ContextualSerializer
  */
 @Target(AnnotationTarget.FILE)
 @Retention(AnnotationRetention.BINARY)
