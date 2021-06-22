@@ -132,9 +132,12 @@ internal open class JsonLexer(@JvmField protected var source: CharSequence) {
             fail("Expected EOF, but had ${source[currentPosition - 1]} instead")
     }
 
+    @Suppress("NOTHING_TO_INLINE")
+    private inline fun definitelyNotEof(position: Int): Boolean = position < source.length
+
     fun tryConsumeComma(): Boolean {
         val current = skipWhitespaces()
-        if (current == source.length) return false
+        if (!definitelyNotEof(current)) return false
         if (source[current] == ',') {
             ++currentPosition
             return true
@@ -145,7 +148,7 @@ internal open class JsonLexer(@JvmField protected var source: CharSequence) {
     fun canConsumeValue(): Boolean {
         ensureHaveChars()
         var current = currentPosition
-        while (current < source.length) {
+        while (definitelyNotEof(current)) {
             val c = source[current]
             // Inlined skipWhitespaces without field spill and nested loop. Also faster then char2TokenClass
             if (c == ' ' || c == '\n' || c == '\r' || c == '\t') {
@@ -186,7 +189,7 @@ internal open class JsonLexer(@JvmField protected var source: CharSequence) {
         ensureHaveChars()
         val source = source
         var cpos = currentPosition
-        while (cpos < source.length) {
+        while (definitelyNotEof(cpos)) {
             val c = source[cpos++]
             if (c == ' ' || c == '\n' || c == '\r' || c == '\t') continue
             currentPosition = cpos
@@ -224,21 +227,24 @@ internal open class JsonLexer(@JvmField protected var source: CharSequence) {
 
     fun peekNextToken(): Byte {
         val source = source
-        while (currentPosition < source.length) {
-            val ch = source[currentPosition]
+        var cpos = currentPosition
+        while (definitelyNotEof(cpos)) {
+            val ch = source[cpos]
             if (ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t') {
-                ++currentPosition
+                ++cpos
                 continue
             }
+            currentPosition = cpos
             return charToTokenClass(ch.code)
         }
+        currentPosition = cpos
         return TC_EOF
     }
 
     fun consumeNextToken(): Byte {
         ensureHaveChars()
         val source = source
-        while (currentPosition < source.length) {
+        while (definitelyNotEof(currentPosition)) {
             val ch = source[currentPosition++]
             return when (val tc = charToTokenClass(ch.code)) {
                 TC_WHITESPACE -> continue
@@ -256,6 +262,7 @@ internal open class JsonLexer(@JvmField protected var source: CharSequence) {
     fun tryConsumeNotNull(): Boolean {
         val current = skipWhitespaces()
         // Cannot consume null due to EOF, maybe something else
+        // todo load excessive
         if (source.length - current < 4) return true
         for (i in 0..3) {
             if (NULL[i] != source[current + i]) return true
@@ -267,7 +274,7 @@ internal open class JsonLexer(@JvmField protected var source: CharSequence) {
     private fun skipWhitespaces(): Int {
         var current = currentPosition
         // Skip whitespaces
-        while (current < source.length) {
+        while (definitelyNotEof(current)) {
             val c = source[current]
             // Faster than char2TokenClass actually
             if (c == ' ' || c == '\n' || c == '\r' || c == '\t') {

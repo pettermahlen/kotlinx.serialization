@@ -4,8 +4,8 @@ import java.io.*
 import java.nio.CharBuffer
 import java.nio.charset.Charset
 
-internal const val BATCH_SIZE = 64 * DEFAULT_BUFFER_SIZE
-private const val DEFAULT_THRESHOLD = 1024
+internal const val BATCH_SIZE = DEFAULT_BUFFER_SIZE
+private const val DEFAULT_THRESHOLD = 128
 
 
 /**
@@ -54,6 +54,11 @@ internal class JsonReaderLexer(
         }
         currentPosition = 0
     }
+
+//    override fun definitelyNotEof(position: Int): Boolean {
+//        require(source !is String) {"WTF"}
+//        return super.definitelyNotEof(position)
+//    }
 
     override fun ensureHaveChars() {
         val cur = currentPosition
